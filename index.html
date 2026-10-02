@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Animation Studio</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <header>
+    <strong>Animation Studio</strong>
+  </header>
+
+  <main>
+    <section id="toolbar">
+      <button id="undo">↶ Undo</button>
+      <button id="redo">↷ Redo</button>
+      <button id="pencil" class="active">✏️ Pencil</button>
+      <button id="eraser">🧽 Eraser</button>
+
+      <input id="color" type="color" value="#000000">
+
+      <select id="size">
+        <option value="2">Small</option>
+        <option value="10" selected>Medium</option>
+        <option value="20">Large</option>
+        <option value="30">Huge</option>
+      </select>
+
+      <button id="clear">🗑️ Clear</button>
+    </section>
+
+    <section id="canvas-area">
+      <canvas id="canvas" width="1280" height="720"></canvas>
+    </section>
+
+    <section id="timeline">
+      <div id="timeline-controls">
+        <button id="add-frame">➕ Add Frame</button>
+        <button id="delete-frame">🗑️ Delete Frame</button>
+        <button id="play">▶️ Play</button>
+        <button id="extract">📁 Extract Video</button>
+        <button id="export">🎬 Export Video</button>
+<button id="onion">🧅 Onion: OFF</button>
+      </div>
+
+      <div id="frames"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

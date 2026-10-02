@@ -1,0 +1,26 @@
+{
+  "name": "animation-studio",
+  "version": "1.0.0",
+  "description": "A 2D animation studio built from scratch.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abhishekbagdi770-beep/animation-studio.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/abhishekbagdi770-beep/animation-studio/issues"
+  },
+  "homepage": "https://github.com/abhishekbagdi770-beep/animation-studio#readme",
+  "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/cli": "^8.5.2",
+    "@capacitor/core": "^8.5.2"
+  }
+}
