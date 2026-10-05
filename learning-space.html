@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Max — Learning Space</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:#15161a;
+  color:#fff;
+  font-family:Arial,sans-serif;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+header{
+  padding:14px 18px;
+  background:#202126;
+  border-bottom:1px solid #333;
+  font-size:20px;
+  font-weight:bold;
+}
+header span{
+  color:#ff3d91;
+}
+#teacher{
+  margin:12px;
+  height:30vh;
+  min-height:180px;
+  background:#08090b;
+  border-radius:14px;
+  overflow:hidden;
+  position:relative;
+  border:1px solid #333;
+}
+#camera{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:none;
+}
+#cameraOff{
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#999;
+}
+#cameraButton{
+  position:absolute;
+  right:12px;
+  bottom:12px;
+  padding:10px 15px;
+  border:0;
+  border-radius:20px;
+  background:#ff3d91;
+  color:white;
+  font-weight:bold;
+}
+#chat{
+  flex:1;
+  overflow-y:auto;
+  padding:10px 14px;
+}
+.message{
+  max-width:85%;
+  padding:11px 14px;
+  margin:8px 0;
+  border-radius:14px;
+  line-height:1.4;
+}
+.teacher{
+  background:#292b31;
+  margin-right:auto;
+}
+.max{
+  background:#ff3d91;
+  margin-left:auto;
+}
+.system{
+  text-align:center;
+  color:#888;
+  font-size:13px;
+}
+#inputArea{
+  display:flex;
+  gap:8px;
+  padding:10px;
+  background:#202126;
+}
+#input{
+  flex:1;
+  border:0;
+  outline:0;
+  border-radius:22px;
+  padding:13px 16px;
+  background:#303239;
+  color:white;
+  font-size:15px;
+}
+button{
+  border:0;
+  border-radius:22px;
+  padding:0 17px;
+  background:#ff3d91;
+  color:white;
+  font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  🧠 <span>MAX</span> — Learning Space
+</header>
+
+<div id="teacher">
+
+  <video id="camera" autoplay playsinline></video>
+
+  <div id="cameraOff">
+    📷 Teacher camera is off
+  </div>
+
+  <button id="cameraButton">Start Camera</button>
+
+</div>
+
+<div id="chat">
+  <div class="message system">
+    Learning Space ready. Teach Max something.
+  </div>
+</div>
+
+<div id="inputArea">
+  <input
+    id="input"
+    placeholder="Teach Max something..."
+    autocomplete="off"
+  >
+  <button id="send">Send</button>
+</div>
+
+<script>
+
+const chat = document.getElementById("chat");
+const input = document.getElementById("input");
+const send = document.getElementById("send");
+
+const camera = document.getElementById("camera");
+const cameraOff = document.getElementById("cameraOff");
+const cameraButton = document.getElementById("cameraButton");
+
+let socket = null;
+let stream = null;
+
+function addMessage(text, type){
+  const div = document.createElement("div");
+  div.className = "message " + type;
+  div.textContent = text;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function connectMax(){
+
+  const protocol =
+    location.protocol === "https:" ? "wss:" : "ws:";
+
+  socket = new WebSocket(
+    protocol + "//" + location.host
+  );
+
+  socket.onopen = () => {
+    addMessage("Connected to Max.", "system");
+  };
+
+  socket.onmessage = event => {
+
+    try{
+
+      const data = JSON.parse(event.data);
+
+      if(data.type === "max_connected"){
+        addMessage(
+          "I'm ready. Teach me.",
+          "max"
+        );
+      }
+
+      if(data.type === "max_response"){
+
+        let result = data.result;
+
+        if(typeof result === "object"){
+          result =
+            result.response ||
+            result.answer ||
+            result.message ||
+            JSON.stringify(result);
+        }
+
+        addMessage(String(result), "max");
+      }
+
+    }catch(error){
+
+      addMessage(
+        "Max: " + event.data,
+        "max"
+      );
+
+    }
+
+  };
+
+  socket.onclose = () => {
+    addMessage(
+      "Connection to Max closed.",
+      "system"
+    );
+  };
+
+  socket.onerror = () => {
+    addMessage(
+      "Could not connect to Max.",
+      "system"
+    );
+  };
+}
+
+function sendMessage(){
+
+  const text = input.value.trim();
+
+  if(!text) return;
+
+  addMessage(text, "teacher");
+
+  if(!socket || socket.readyState !== WebSocket.OPEN){
+
+    addMessage(
+      "Max is not connected.",
+      "system"
+    );
+
+    return;
+  }
+
+  socket.send(JSON.stringify({
+    type:"message",
+    text:text
+  }));
+
+  input.value = "";
+}
+
+send.onclick = sendMessage;
+
+input.addEventListener("keydown", e => {
+
+  if(e.key === "Enter"){
+    sendMessage();
+  }
+
+});
+
+cameraButton.onclick = async () => {
+
+  if(stream){
+
+    stream.getTracks().forEach(track => track.stop());
+
+    stream = null;
+    camera.srcObject = null;
+
+    camera.style.display = "none";
+    cameraOff.style.display = "flex";
+
+    cameraButton.textContent = "Start Camera";
+
+    return;
+  }
+
+  try{
+
+    stream = await navigator.mediaDevices.getUserMedia({
+      video:true,
+      audio:false
+    });
+
+    camera.srcObject = stream;
+
+    camera.style.display = "block";
+    cameraOff.style.display = "none";
+
+    cameraButton.textContent = "Stop Camera";
+
+  }catch(error){
+
+    addMessage(
+      "Camera permission was not available.",
+      "system"
+    );
+
+  }
+
+};
+
+connectMax();
+
+</script>
+
+</body>
+</html>

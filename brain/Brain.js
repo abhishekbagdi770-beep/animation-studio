@@ -1,9 +1,11 @@
 import fs from "fs";
+import { SemanticMemory } from "./SemanticMemory.js";
 
 export class Brain {
   constructor() {
     this.name = "Max";
     this.state = "idle";
+    this.semanticMemory = new SemanticMemory();
     this.memoryFile = "./brain/memory.json";
 
     try {
@@ -66,7 +68,7 @@ export class Brain {
       const subject = input
         .replace("what is my favorite", "")
         .replace("?", "")
-        .trim();
+        .trim();g
 
       const key = `favorite ${subject}`;
 
@@ -90,7 +92,21 @@ export class Brain {
     return null;
   }
 
-  receive(text) {
+  learnFact(key, value) {
+    const cleanKey = String(key).trim().toLowerCase();
+    const cleanValue = String(value).trim();
+
+    if (!cleanKey || !cleanValue) {
+      return false;
+    }
+
+    this.memory[cleanKey] = cleanValue;
+    this.saveMemory();
+
+    return true;
+  }
+
+  async receive(text) {
     this.state = "thinking";
 
     const input = text.toLowerCase().trim();
@@ -134,7 +150,7 @@ export class Brain {
         ? remembered
         : "I don't remember that yet.";
 
-    } else if (input.includes("what can you do") || input.includes("what are your abilities") || input.includes("can you help me")) { response = "I can remember information, retrieve memories, understand requests, and respond to you."; } else if (input.includes("hello") || input.includes("hi")) {
+    } else if (input.includes("what can you do") || input.includes("what are your abilities") || input.includes("can you help me")) { response = "I can remember information, retrieve memories, understand requests, and respond to you."; } else if (input === "hello" || input === "hi" || input === "hey") {
       response = "Hello! I'm Max 😎";
 
     } else if (input.includes("what time") || input.includes("time now")) {
@@ -153,11 +169,21 @@ export class Brain {
       response = `My name is ${this.name}.`;
 
     } else {
-      const remembered = this.rememberFromSentence(text);
+      const semanticResults = await this.semanticMemory.search(
+        text,
+        3,
+        0.50
+      );
 
-      response = remembered
-        ? remembered
-        : `I received: "${text}"`;
+      const semanticMatch =
+        semanticResults.length > 0 &&
+        semanticResults[0].score >= 0.50;
+
+      if (semanticMatch) {
+        response = semanticResults[0].text;
+      } else {
+        response = "I don't know that yet.";
+      }
     }
 
     this.state = "idle";
